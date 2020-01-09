@@ -1,25 +1,39 @@
 from rest_framework import serializers
+from user_sessions.models import User, UserSessions
 
-from user_sessions.models import User,UserSessions
+
+class VerboseUserSession(serializers.ModelSerializer):
+    """Verbose session details serializer"""
+    class Meta:
+        model = UserSessions
+        fields = ('session', 'user_ip', 'user_agent','is_active')
 
 
 class UserSessionKeySerializer(serializers.ModelSerializer):
     """ Serialializer to handle the user_session instances"""
-    
     class Meta:
         model = UserSessions
-        # fields = ('sessions','is_active')
-        fields = '__all__'
+        fields = ('session', 'is_active',)
 
-        
 
 class UserAndUserSessionSerializer(serializers.ModelSerializer):
     """ Serializer to handle the user and nested user_session details"""
-    session = UserSessionKeySerializer(many=True)
+    sessions = UserSessionKeySerializer(many=True,)
+
     class Meta:
         model = User
-        fields = ('mobile_number','username','session')
+        fields = ('mobile_number', 'username', 'active_session', 'sessions',)
         depth = 1
+
+
+class UserAndVerboseUserSessionSerializer(serializers.ModelSerializer):
+    """Serializer to handle the user and nested verbose user session details"""
+    sessions = VerboseUserSession(many=True)
+
+    class Meta:
+        model = User
+        fields = ('mobile_number', 'username', 'active_session', 'sessions',)
+
 
 class UserSerializer(serializers.Serializer):
     """Serializer to handle User instances"""
@@ -27,8 +41,6 @@ class UserSerializer(serializers.Serializer):
     mobile_number = serializers.IntegerField()
 
     def create(self, validated_data):
-        print(f'{request.user} is the wayyyyyyy')
-        return User.objects.create_user(username=validated_data['username'], 
-                                    mobile_number=validated_data['mobile_number'],
-                                    password=validated_data['mobile_number'])
-
+        return User.objects.create_user(username=validated_data['username'],
+                                        mobile_number=validated_data['mobile_number'],
+                                        password=validated_data['mobile_number'])

@@ -18,7 +18,7 @@ class UserManager(_UserManager):
         Creates and saves a user with the provided 
         username and mobile_number
         """
-        
+
         if not username or not password:
             raise ValueError('Users must enter username and password')
 
@@ -31,7 +31,7 @@ class UserManager(_UserManager):
         """
         Creates and saves a superuser with the provided username,mobile_number
         """
-        
+
         user = self.create_user(
             username=username,
             password=password,
@@ -51,7 +51,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         primary_key=True, default=uuid.uuid4, editable=False)
     mobile_number = models.BigIntegerField(verbose_name='mobile number')
     username = models.CharField(max_length=100, unique=True)
-    # password = models.CharField(max_length=20, verbose_name='password')
+    active_session = models.CharField(max_length=200, null=True, blank=True)
     is_staff = models.BooleanField(verbose_name='is staff', default=False)
     is_superuser = models.BooleanField(
         verbose_name='is superuser', default=False)
@@ -62,10 +62,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
-    
+
     def get_short_name(self):
-        return self.username    
-    
+        return self.username
+
     def get_long_name(self):
         return self.username
 
@@ -79,15 +79,14 @@ class UserSessions(models.Model):
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.SET_NULL, null=True)
-    session = models.CharField(max_length=400,null=True,blank=False)
+                             on_delete=models.SET_NULL, null=True, related_name='sessions')
+    session = models.CharField(max_length=400, null=True, blank=False)
     user_ip = models.GenericIPAddressField(
         protocol='both', unpack_ipv4=False, blank=True, null=True,)
     date_time_of_session_start = models.DateTimeField(auto_now_add=True)
     user_agent = models.CharField(max_length=500, blank=True, null=True)
     is_active = models.BooleanField(
         default=True, verbose_name='session active')
-
 
 
 def get_client_ip(request):
@@ -101,25 +100,29 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
+
 @receiver(user_logged_in)
 def user_logged_in_handler(sender, request, user, **kwargs):
     """
     Signal to deactivate the older of the concurrent sessions of the user.
     """
-    print('HHELLLLLLLLLLLLLLLLLLLLLLLLLLL')
     try:
         _session = UserSessions.objects.get(user=user, is_active=True)
         _session.is_active = False
         _session.save()
     except UserSessions.DoesNotExist:
         pass
-    print(request.session.values())
     session = UserSessions.objects.create(
         user=user, session=request.session.session_key,
-        user_ip=get_client_ip(request), is_active=True)
+        user_ip=get_client_ip(request), is_active=True, user_agent=request.META.get('HTTP_USER_AGENT'))
+    try:
+        current_user = User.objects.get(finin_id=user.finin_id)
+        current_user.active_session = request.session.session_key
+        current_user.save()
+    except Exception as e:
+        print(e)
+
     session.save()
-
-
 
 
 @receiver(user_logged_out)
@@ -127,12 +130,8 @@ def user_logged_out_handler(sender, request, user, **kwargs):
     """
     Signal to deactivate the session when the user logs-out
     """
-    print(request.session.session_key)
-    print('BYEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
+
     _session = UserSessions.objects.get(
         user=user, session=request.session.session_key)
     _session.is_active = False
     _session.save()
-
-
-
