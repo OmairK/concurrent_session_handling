@@ -5,11 +5,12 @@ from user_sessions.serializers import (
     UserSessionKeySerializer, UserAndVerboseUserSessionSerializer)
 from user_sessions.models import User, UserSessions
 from rest_framework import permissions
+from rest_framework.permissions import IsAdminUser
 from user_sessions.permission import ValidSessionPermission
 from django.shortcuts import get_object_or_404
 
 
-class CreateUserView(generics.ListCreateAPIView):
+class CreateUserView(generics.CreateAPIView):
     """
     API View to list and create users. 
     """
@@ -22,7 +23,7 @@ class ListUsersView(generics.ListAPIView):
     """
     API View to test the valid session 
     """
-    permission_class = (ValidSessionPermission,)
+    permission_classes = (ValidSessionPermission,)
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
@@ -31,6 +32,7 @@ class ListClientSession(generics.RetrieveAPIView):
     """
     API view to retrieve details of a client's sessions
     """
+    permission_classes = [IsAdminUser & ValidSessionPermission]
     serializer_class = UserAndUserSessionSerializer
     queryset = User.objects.all()
     lookup_field = 'mobile_number'
@@ -44,6 +46,7 @@ class ListVerboseClientSessions(generics.RetrieveAPIView):
     """
     API view to retrieve verbose details of a client's sessions
     """
+    permission_classes = [IsAdminUser & ValidSessionPermission]
     serializer_class = UserAndVerboseUserSessionSerializer
     queryset = UserSessions.objects.all()
     lookup_field = 'mobile_number'
