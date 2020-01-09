@@ -49,7 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     finin_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
-    mobile_number = models.BigIntegerField(verbose_name='mobile number')
+    mobile_number = models.BigIntegerField(verbose_name='mobile number',unique=True)
     username = models.CharField(max_length=100, unique=True)
     active_session = models.CharField(max_length=200, null=True, blank=True)
     is_staff = models.BooleanField(verbose_name='is staff', default=False)

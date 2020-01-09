@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from user_sessions.models import User, UserSessions
+from django.core.exceptions import SuspiciousOperation
+from django.db import IntegrityError
 
 
 class VerboseUserSession(serializers.ModelSerializer):
@@ -41,6 +43,10 @@ class UserSerializer(serializers.Serializer):
     mobile_number = serializers.IntegerField()
 
     def create(self, validated_data):
-        return User.objects.create_user(username=validated_data['username'],
-                                        mobile_number=validated_data['mobile_number'],
-                                        password=validated_data['mobile_number'])
+        try:
+            return User.objects.create_user(username=validated_data['username'],
+                                            mobile_number=validated_data['mobile_number'],
+                                            password=validated_data['mobile_number'])
+        except IntegrityError:
+            raise serializers.ValidationError('This username or mobile number is already registered')
+
