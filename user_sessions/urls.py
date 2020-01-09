@@ -4,7 +4,7 @@ from django.conf.urls import url
 
 
 urlpatterns = [
-    path('user-signup/',views.CreateUserView.as_view(),name="Sign-Up"), 
+    path('signup/',views.CreateUserView.as_view(),name="Sign-Up"), 
     path('list/',views.ListUsersView.as_view(),name='List'),
 
     url(r'^session/(?P<mobile_number>\d+)$',
