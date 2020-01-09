@@ -5,6 +5,10 @@ from django.db import models
 from django.conf import settings
 from django.contrib.sessions.models import Session
 
+from django.contrib.auth import user_logged_in, user_logged_out
+
+from django.dispatch import receiver
+
 import uuid
 
 
@@ -76,7 +80,7 @@ class UserSessions(models.Model):
         primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.SET_NULL, null=True)
-    session = models.OneToOneField(Session, on_delete=models.SET_NULL,null=True)
+    session = models.CharField(max_length=400,null=True,blank=False)
     user_ip = models.GenericIPAddressField(
         protocol='both', unpack_ipv4=False, blank=True, null=True,)
     date_time_of_session_start = models.DateTimeField(auto_now_add=True)
@@ -84,9 +88,6 @@ class UserSessions(models.Model):
     is_active = models.BooleanField(
         default=True, verbose_name='session active')
 
-from django.contrib.auth import user_logged_in, user_logged_out
-from user_sessions.models import UserSessions
-from django.dispatch import receiver
 
 
 def get_client_ip(request):
@@ -114,23 +115,24 @@ def user_logged_in_handler(sender, request, user, **kwargs):
         pass
     print(request.session.values())
     session = UserSessions.objects.create(
-        user=user, session=request.session,
+        user=user, session=request.session.session_key,
         user_ip=get_client_ip(request), is_active=True)
     session.save()
 
 
-# user_logged_in.connect(user_logged_in_handler)
+
 
 @receiver(user_logged_out)
 def user_logged_out_handler(sender, request, user, **kwargs):
     """
     Signal to deactivate the session when the user logs-out
     """
-    print('BYEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEe')
+    print(request.session.session_key)
+    print('BYEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
     _session = UserSessions.objects.get(
         user=user, session=request.session.session_key)
     _session.is_active = False
     _session.save()
 
 
-# user_logged_out.connect(user_logged_out_handler)
+
