@@ -4,7 +4,7 @@ from django.core.validators import EmailValidator, RegexValidator
 from django.db import models
 from django.conf import settings
 from django.contrib.sessions.models import Session
-
+from django.core.exceptions import ValidationError 
 from django.contrib.auth import user_logged_in, user_logged_out
 
 from django.dispatch import receiver
@@ -31,16 +31,25 @@ class UserManager(_UserManager):
         """
         Creates and saves a superuser with the provided username,mobile_number
         """
+        try:
+            if int(password)!=-1:
+                user = self.create_user(
+                    username=username,
+                    password=password,
+                    mobile_number=password,
+                    )
+                user.is_staff = True
+                user.is_superuser = True
+                user.save(using=self._db)
+                return user
+            
+        except ValueError as e:
+            print('Password should be integer preferably a mobile-number')
+            raise ValidationError('Password should be an integer')
 
-        user = self.create_user(
-            username=username,
-            password=password,
-            mobile_number=password,
-        )
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-        return user
+
+
+        
 
 
 class User(AbstractBaseUser, PermissionsMixin):
