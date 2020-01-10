@@ -8,7 +8,7 @@ $ pip install -r requirements.txt
 $ python manage.py makemigrations
 $ python manage.py migrate
 ```
-- Create a superuser for accessing the API doc
+- Create a superuser with username and mobile number of the superuser as password for accessing the API doc
 ```
 $ python manage.py createsuperuser
 ```
