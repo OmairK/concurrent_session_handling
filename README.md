@@ -1,4 +1,4 @@
-# Finin-Internship
+# Concurrent Session Handling
 ### Basic Setup
 - Setting up a django server
 ```
